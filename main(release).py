@@ -4,7 +4,7 @@ import time
 
 def main(page: ft.Page):
     page.title = "VimeCheck"
-    page.theme_mode  = 'light'
+    page.theme_mode  = 'dark'
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.window_width = 400
     page.window_height = 450
@@ -23,7 +23,7 @@ def main(page: ft.Page):
 
         try:
             response = req.get(URL).json()
-
+            # print(response)
             if not response:
                 # Если ответ пустой, выводим сообщение об ошибке
                 bt_get.text = 'Неверный Ник!'
@@ -41,10 +41,6 @@ def main(page: ft.Page):
             else:
                 bt_get.color = 'green'
                 bt_get.text = 'Успешно!'
-                page.update()
-                time.sleep(2)
-                bt_get.color = ''
-                bt_get.text = 'Получить информацию'
                 page.update()
             id_data.value = str(response[0]['id'])
             username_data.value = str(response[0]['username'])
@@ -67,7 +63,11 @@ def main(page: ft.Page):
                 return rank_color
 
             level_rank.color = rank_color(response)
-            # print(response) - режим отладки
+            
+            page.update()
+            time.sleep(2)
+            bt_get.color = ''
+            bt_get.text = 'Получить информацию'
             page.update()
 
         except req.RequestException as e:
@@ -87,23 +87,26 @@ def main(page: ft.Page):
     level_rank = ft.Text('', color='')
     user_data = ft.TextField(label= 'Никнейм игрока',width=350, on_change=validate)
     bt_get = ft.ElevatedButton(text='Поиск', on_click=get_info, disabled=True)
+    
 
     def change_theme(e):
-        user = page.navigation_bar.selected_index
-        if user == 0:
+        if page.theme_mode == 'dark':
             page.theme_mode = 'light'
-        elif user == 1:
+            bt_change_theme.icon = ft.icons.MODE_NIGHT_ROUNDED
+        else:
             page.theme_mode = 'dark'
+            bt_change_theme.icon = ft.icons.SUNNY
         page.update()
+        
+    bt_change_theme = ft.IconButton(ft.icons.WB_SUNNY_SHARP, on_click=change_theme)
 
-    page.navigation_bar = ft.NavigationBar(
-        destinations=[
-            ft.NavigationDestination(icon=ft.icons.WB_SUNNY_SHARP, label='Светлая тема'),
-            ft.NavigationDestination(icon=ft.icons.MODE_NIGHT_SHARP, label='Темная тема')
-        ], on_change=change_theme
-    )
 
     page.add(
+        ft.Row(
+            [
+                bt_change_theme
+            ],vertical_alignment=ft.MainAxisAlignment.SPACE_EVENLY, alignment=ft.MainAxisAlignment.END
+        ),
         ft.Row(
             [
                 ft.Text('Айди игрока по его нику')
