@@ -1,5 +1,7 @@
 import flet as ft
 import requests as req
+import time
+
 def main(page: ft.Page):
     page.title = "VimeCheck"
     page.theme_mode  = 'light'
@@ -7,35 +9,74 @@ def main(page: ft.Page):
     page.window_width = 400
     page.window_height = 450
     page.window_resizable = False
+
     def validate(e):
         if all([user_data.value]):
             bt_get.disabled = False
         else:
             bt_get.disabled = True
+
         page.update()
+
     def get_info(e):
         URL = f'https://api.vimeworld.com/user/name/{user_data.value}'
-        response = req.get(URL).json()
-        id_data.value = str(response[0]['id'])
-        username_data.value = str(response[0]['username'])
-        level.value = str(response[0]['level'])
-        level_rank.value = str(response[0]['rank'])
-        def rank_color(response):
-            rank_nickname = response[0]['rank']
-            if rank_nickname == 'VIP':
-                rank_color = '#00be00'
-            elif rank_nickname == 'PREMIUM':
-                rank_color = '#00dada'
-            elif rank_nickname == 'HOLY':
-                rank_color = '#ffba2d'
-            elif rank_nickname == 'IMMORTAL':
-                rank_color = '#e800d5'
+
+        try:
+            response = req.get(URL).json()
+
+            if not response:
+                # Если ответ пустой, выводим сообщение об ошибке
+                bt_get.text = 'Неверный Ник!'
+                bt_get.color = 'red'
+                page.update()  # Обновляем страницу, чтобы изменения отобразились
+
+                # Ждем 2 секунды
+                time.sleep(2)
+
+                # Возвращаем исходный текст кнопки
+                bt_get.text = 'Получить информацию'
+                bt_get.color = ''
+                page.update()  # Обновляем страницу снова
+                return
             else:
-                rank_color = ' '
-            return rank_color
-        level_rank.color = rank_color(response)
-        # print(response) - debug mode
-        page.update()
+                bt_get.color = 'green'
+                bt_get.text = 'Успешно!'
+                page.update()
+                time.sleep(2)
+                bt_get.color = ''
+                bt_get.text = 'Получить информацию'
+                page.update()
+            id_data.value = str(response[0]['id'])
+            username_data.value = str(response[0]['username'])
+            level.value = str(response[0]['level'])
+            level_rank.value = str(response[0]['rank'])
+
+            def rank_color(response):
+                rank_nickname = response[0]['rank']
+                if rank_nickname == 'VIP':
+                    rank_color = '#00be00'
+                elif rank_nickname == 'PREMIUM':
+                    rank_color = '#00dada'
+                elif rank_nickname == 'HOLY':
+                    rank_color = '#ffba2d'
+                elif rank_nickname == 'IMMORTAL':
+                    rank_color = '#e800d5'
+                else:
+                    rank_color = ' '
+
+                return rank_color
+
+            level_rank.color = rank_color(response)
+            # print(response) - режим отладки
+            page.update()
+
+        except req.RequestException as e:
+            # Обработка ошибки при выполнении запроса (например, проблема с соединением)
+            print("Ошибка при выполнении запроса:", e)
+        except Exception as e:
+            # Обработка других исключений
+            print("Произошла неожиданная ошибка:", e)    
+
     id_text = ft.Text('Айди игрока:')
     id_data = ft.Text('')
     username = ft.Text('Никнейм игрока:')
@@ -46,6 +87,7 @@ def main(page: ft.Page):
     level_rank = ft.Text('', color='')
     user_data = ft.TextField(label= 'Никнейм игрока',width=350, on_change=validate)
     bt_get = ft.ElevatedButton(text='Поиск', on_click=get_info, disabled=True)
+
     def change_theme(e):
         user = page.navigation_bar.selected_index
         if user == 0:
@@ -53,12 +95,14 @@ def main(page: ft.Page):
         elif user == 1:
             page.theme_mode = 'dark'
         page.update()
+
     page.navigation_bar = ft.NavigationBar(
         destinations=[
             ft.NavigationDestination(icon=ft.icons.WB_SUNNY_SHARP, label='Светлая тема'),
             ft.NavigationDestination(icon=ft.icons.MODE_NIGHT_SHARP, label='Темная тема')
         ], on_change=change_theme
     )
+
     page.add(
         ft.Row(
             [
@@ -73,4 +117,5 @@ def main(page: ft.Page):
         ft.Row([rank, level_rank],alignment=ft.MainAxisAlignment.CENTER),
         ft.Row([bt_get],alignment=ft.MainAxisAlignment.CENTER)
     )
+
 ft.app(target=main)
